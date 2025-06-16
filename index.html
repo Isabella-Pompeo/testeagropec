@@ -1515,65 +1515,6 @@ if (applyEventFiltersButton) {
     });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const canvas = document.getElementById("fairMapCanvas");
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-
-    // Definindo tamanho ideal (ajuste conforme sua imagem)
-    canvas.width = 1200;
-    canvas.height = 750;
-
-    const mapImage = new Image();
-    mapImage.src = "09f05500-ff63-4a32-8160-261b02f8c022.png"; // Caminho direto da imagem no projeto
-    mapImage.onload = () => {
-        drawMap();
-    };
-
-    // Coordenadas ajustadas com base na sua imagem
-    const stands = [
-        { id: "A-01", name: "AgroTech", x: 230, y: 100, width: 160, height: 45 },
-        { id: "B-02", name: "Fazenda Modelo", x: 430, y: 100, width: 160, height: 45 },
-        { id: "C-03", name: "InovaAgro", x: 820, y: 260, width: 160, height: 45 }
-    ];
-
-    function drawMap() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
-
-        for (const stand of stands) {
-            ctx.fillStyle = "#4CAF50";
-            ctx.fillRect(stand.x, stand.y, stand.width, stand.height);
-
-            ctx.strokeStyle = "#FFFFFF";
-            ctx.strokeRect(stand.x, stand.y, stand.width, stand.height);
-
-            ctx.fillStyle = "#FFFFFF";
-            ctx.font = "bold 18px Inter";
-            ctx.fillText(stand.id, stand.x + 10, stand.y + 28);
-        }
-    }
-
-    canvas.addEventListener("click", function (e) {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        for (const stand of stands) {
-            if (
-                mouseX >= stand.x &&
-                mouseX <= stand.x + stand.width &&
-                mouseY >= stand.y &&
-                mouseY <= stand.y + stand.height
-            ) {
-                alert(`Estande ${stand.id}: ${stand.name}`);
-                break;
-            }
-        }
-    });
-});
-
 
     </script>
 
