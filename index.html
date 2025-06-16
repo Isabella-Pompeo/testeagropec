@@ -413,7 +413,7 @@
         Ocorreu um erro ao carregar o Firebase. Detalhes: <span id="firebase-error-details"></span>
     </div>
 
-    <script>
+    <script type="module">
 
  // Importa as funções necessárias do SDK do Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
@@ -548,47 +548,43 @@ function handleMapResize(canvasId) {
 }
 
 function drawMap(canvasId, ctx, cssWidth, cssHeight) {
+    function drawMap(canvasId, ctx, cssWidth, cssHeight) {
     if (!ctx) return;
-    ctx.clearRect(0, 0, cssWidth, cssHeight);
-    ctx.fillStyle = '#F0F0F0'; 
-    ctx.fillRect(0, 0, cssWidth, cssHeight);
 
-    // Desenho simplificado do mapa para focar na funcionalidade das estandes
-    const streetColor = '#A0A0A0';
-    ctx.fillStyle = streetColor;
-    ctx.fillRect(cssWidth * 0.1, 0, cssWidth * 0.08, cssHeight); // Rua vertical 1
-    ctx.fillRect(cssWidth * 0.82, 0, cssWidth * 0.08, cssHeight); // Rua vertical 2
-    ctx.fillRect(0, cssHeight * 0.2, cssWidth, cssHeight * 0.08); // Rua horizontal 1
-    ctx.fillRect(0, cssHeight * 0.72, cssWidth, cssHeight * 0.08); // Rua horizontal 2
+    // Limpa o canvas
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    // Desenha a imagem de fundo, se estiver carregada
+    if (backgroundImage && backgroundImage.complete) {
+        ctx.drawImage(backgroundImage, 0, 0, cssWidth, cssHeight);
+    } else {
+        ctx.fillStyle = "#F0F0F0";
+        ctx.fillRect(0, 0, cssWidth, cssHeight); // fallback cinza
+    }
+
+    const originalMapHeightForCoords = 400; // Base usada para salvar as coords
+    const scaleFactor = cssHeight / originalMapHeightForCoords;
 
     stands.forEach(stand => {
-        // As coordenadas X, Y são salvas relativas ao tamanho CSS do mapa de admin (400px de altura)
-        // Precisamos escalar para o tamanho atual do mapa de visualização, se diferente.
-        // Para simplificar, vamos assumir que o mapa de admin e visualização têm a mesma proporção de altura
-        // e que as coordenadas são salvas em pixels absolutos para um mapa de altura 400px.
-        const originalMapHeightForCoords = 400; // A altura base para a qual as coords foram salvas
-        const scaleFactor = cssHeight / originalMapHeightForCoords;
-
         const displayX = stand.x * scaleFactor;
         const displayY = stand.y * scaleFactor;
-        
         const standSize = Math.min(20 * scaleFactor, cssWidth * 0.03, cssHeight * 0.04);
         const halfSize = standSize / 2;
 
-        ctx.fillStyle = '#4CAF50'; 
-        ctx.strokeStyle = '#388E3C'; 
+        ctx.fillStyle = "#4CAF50";
+        ctx.strokeStyle = "#388E3C";
         ctx.lineWidth = 2 * scaleFactor;
         ctx.fillRect(displayX - halfSize, displayY - halfSize, standSize, standSize);
         ctx.strokeRect(displayX - halfSize, displayY - halfSize, standSize, standSize);
 
-        ctx.fillStyle = '#FFFFFF'; 
+        ctx.fillStyle = "#FFFFFF";
         ctx.font = `bold ${Math.max(8, standSize * 0.4)}px Inter`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillText(stand.id, displayX, displayY);
 
         if (stand.occupant) {
-            ctx.fillStyle = '#424242'; 
+            ctx.fillStyle = "#424242";
             ctx.font = `${Math.max(7, standSize * 0.35)}px Inter`;
             ctx.fillText(stand.occupant, displayX, displayY + halfSize + Math.max(7, standSize * 0.35));
         }
@@ -597,9 +593,11 @@ function drawMap(canvasId, ctx, cssWidth, cssHeight) {
     if (canvasId === 'adminMapCanvas' && adminMapTemporaryMarker) {
         ctx.fillStyle = 'red';
         ctx.beginPath();
-        ctx.arc(adminMapTemporaryMarker.x, adminMapTemporaryMarker.y, 5, 0, Math.PI * 2); // Marcador usa coords diretas do clique
+        ctx.arc(adminMapTemporaryMarker.x, adminMapTemporaryMarker.y, 5, 0, Math.PI * 2);
         ctx.fill();
     }
+}
+
 }
 
 function handleMapClick(event) { // Admin map click
@@ -1515,6 +1513,67 @@ if (applyEventFiltersButton) {
     });
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    const canvas = document.getElementById("fairMapCanvas");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    // Definindo tamanho ideal (ajuste conforme sua imagem)
+    canvas.width = 1200;
+    canvas.height = 750;
+
+    const mapImage = new Image();
+    mapImage.src = "09f05500-ff63-4a32-8160-261b02f8c022.png"; // Caminho direto da imagem no projeto
+    mapImage.onload = () => {
+        drawMap();
+    };
+
+    // Coordenadas ajustadas com base na sua imagem
+    const stands = [
+        { id: "A-01", name: "AgroTech", x: 230, y: 100, width: 160, height: 45 },
+        { id: "B-02", name: "Fazenda Modelo", x: 430, y: 100, width: 160, height: 45 },
+        { id: "C-03", name: "InovaAgro", x: 820, y: 260, width: 160, height: 45 }
+    ];
+
+    function drawMap() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
+
+        for (const stand of stands) {
+            ctx.fillStyle = "#4CAF50";
+            ctx.fillRect(stand.x, stand.y, stand.width, stand.height);
+
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.strokeRect(stand.x, stand.y, stand.width, stand.height);
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "bold 18px Inter";
+            ctx.fillText(stand.id, stand.x + 10, stand.y + 28);
+        }
+    }
+
+    canvas.addEventListener("click", function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        for (const stand of stands) {
+            if (
+                mouseX >= stand.x &&
+                mouseX <= stand.x + stand.width &&
+                mouseY >= stand.y &&
+                mouseY <= stand.y + stand.height
+            ) {
+                alert(`Estande ${stand.id}: ${stand.name}`);
+                break;
+            }
+        }
+    });
+
+loadMapBackground();
+
+});
 
     </script>
 
