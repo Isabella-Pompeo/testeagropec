@@ -454,6 +454,9 @@ const mobileMenuButton = document.getElementById('mobileMenuButton');
 let fairMapCanvas, fairMapCtx, adminMapCanvas, adminMapCtx;
 let stands = []; 
 let adminMapTemporaryMarker = null;
+let backgroundImage = new Image();
+backgroundImage.src = "img/mapa-planta.png"; // ajuste para o nome real da imagem
+
 
 // Função para exibir/ocultar seções
 window.showSection = function(sectionId, clickedLink) {
@@ -503,101 +506,67 @@ window.showSection = function(sectionId, clickedLink) {
     }
 }
 
-// --- Funções do Mapa ---
+// === Variável da imagem do mapa ===
+let backgroundImage = new Image();
+backgroundImage.src = "img/mapa-planta.png";
+// === Função initMap corrigida ===
 function initMap(canvasId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) { console.error(`Canvas '${canvasId}' não encontrado.`); return; }
-    const ctx = canvas.getContext('2d');
-    
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr; // Usa a altura definida pelo CSS (.map-canvas)
-    ctx.scale(dpr, dpr);
-
-    if (canvasId === 'fairMapCanvas') { fairMapCanvas = canvas; fairMapCtx = ctx; }
-    else if (canvasId === 'adminMapCanvas') { adminMapCanvas = canvas; adminMapCtx = ctx; }
-
-    if (canvasId === 'adminMapCanvas') {
-        canvas.removeEventListener('click', handleMapClick);
-        canvas.addEventListener('click', handleMapClick);
-    } else if (canvasId === 'fairMapCanvas') {
-        canvas.removeEventListener('click', handleFairMapClick);
-        canvas.addEventListener('click', handleFairMapClick);
-    }
-    
-    window.removeEventListener('resize', () => handleMapResize(canvasId)); // Evita duplicatas
-    window.addEventListener('resize', () => handleMapResize(canvasId));
-    
-    drawMap(canvasId, ctx, canvas.clientWidth, canvas.clientHeight); // Usa clientWidth/Height para dimensões CSS
-    if (window.db) loadPublicLocations();
+ const canvas = document.getElementById(canvasId);
+ if (!canvas) return;
+ const ctx = canvas.getContext("2d");
+ const rect = canvas.getBoundingClientRect();
+ const cssWidth = rect.width || 800;
+ const cssHeight = rect.height || 400;
+ const dpr = window.devicePixelRatio || 1;
+ canvas.width = cssWidth * dpr;
+ canvas.height = cssHeight * dpr;
+ ctx.scale(dpr, dpr);
+ if (canvasId === 'fairMapCanvas') {
+ fairMapCanvas = canvas;
+ fairMapCtx = ctx;
+ } else if (canvasId === 'adminMapCanvas') {
+ adminMapCanvas = canvas;
+ adminMapCtx = ctx;
+ }
+ drawMap(canvasId, ctx, cssWidth, cssHeight);
+ window.addEventListener("resize", () => {
+ initMap(canvasId);
+ });
 }
-
-function handleMapResize(canvasId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    
-    drawMap(canvasId, ctx, rect.width, rect.height); // Passa as dimensões CSS
-}
-
+// === Função drawMap com imagem de fundo ===
 function drawMap(canvasId, ctx, cssWidth, cssHeight) {
-    function drawMap(canvasId, ctx, cssWidth, cssHeight) {
-    if (!ctx) return;
-
-    // Limpa o canvas
-    ctx.clearRect(0, 0, cssWidth, cssHeight);
-
-    // Desenha a imagem de fundo, se estiver carregada
-    if (backgroundImage && backgroundImage.complete) {
-        ctx.drawImage(backgroundImage, 0, 0, cssWidth, cssHeight);
-    } else {
-        ctx.fillStyle = "#F0F0F0";
-        ctx.fillRect(0, 0, cssWidth, cssHeight); // fallback cinza
-    }
-
-    const originalMapHeightForCoords = 400; // Base usada para salvar as coords
-    const scaleFactor = cssHeight / originalMapHeightForCoords;
-
-    stands.forEach(stand => {
-        const displayX = stand.x * scaleFactor;
-        const displayY = stand.y * scaleFactor;
-        const standSize = Math.min(20 * scaleFactor, cssWidth * 0.03, cssHeight * 0.04);
-        const halfSize = standSize / 2;
-
-        ctx.fillStyle = "#4CAF50";
-        ctx.strokeStyle = "#388E3C";
-        ctx.lineWidth = 2 * scaleFactor;
-        ctx.fillRect(displayX - halfSize, displayY - halfSize, standSize, standSize);
-        ctx.strokeRect(displayX - halfSize, displayY - halfSize, standSize, standSize);
-
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = `bold ${Math.max(8, standSize * 0.4)}px Inter`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(stand.id, displayX, displayY);
-
-        if (stand.occupant) {
-            ctx.fillStyle = "#424242";
-            ctx.font = `${Math.max(7, standSize * 0.35)}px Inter`;
-            ctx.fillText(stand.occupant, displayX, displayY + halfSize + Math.max(7, standSize * 0.35));
-        }
-    });
-
-    if (canvasId === 'adminMapCanvas' && adminMapTemporaryMarker) {
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(adminMapTemporaryMarker.x, adminMapTemporaryMarker.y, 5, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
+ if (!ctx) return;
+ ctx.clearRect(0, 0, cssWidth, cssHeight);
+ if (backgroundImage && backgroundImage.complete) {
+ ctx.drawImage(backgroundImage, 0, 0, cssWidth, cssHeight);
+ } else {
+ ctx.fillStyle = "#F0F0F0";
+ ctx.fillRect(0, 0, cssWidth, cssHeight);
+ const standSize = Math.min(20 * scaleFactor, cssWidth * 0.03, cssHeight * 0.04);
+ const halfSize = standSize / 2;
+ ctx.fillStyle = "#4CAF50";
+ ctx.strokeStyle = "#388E3C";
+ ctx.lineWidth = 2 * scaleFactor;
+ ctx.fillRect(displayX - halfSize, displayY - halfSize, standSize, standSize);
+ ctx.strokeRect(displayX - halfSize, displayY - halfSize, standSize, standSize);
+ ctx.fillStyle = "#FFFFFF";
+ ctx.font = `bold ${Math.max(8, standSize * 0.4)}px Inter`;
+ ctx.textAlign = "center";
+ ctx.textBaseline = "middle";
+ ctx.fillText(stand.id, displayX, displayY);
+ if (stand.occupant) {
+ ctx.fillStyle = "#424242";
+ ctx.font = `${Math.max(7, standSize * 0.35)}px Inter`;
+ ctx.fillText(stand.occupant, displayX, displayY + halfSize + Math.max(7, standSize *
+0.35));
+ }
+ });
+ if (canvasId === 'adminMapCanvas' && adminMapTemporaryMarker) {
+ ctx.fillStyle = 'red';
+ ctx.beginPath();
+ ctx.arc(adminMapTemporaryMarker.x, adminMapTemporaryMarker.y, 5, 0, Math.PI * 2);
+ ctx.fill();
+ }
 }
 
 function handleMapClick(event) { // Admin map click
@@ -1514,27 +1483,27 @@ if (applyEventFiltersButton) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    const canvas = document.getElementById("fairMapCanvas");
-    if (!canvas) return;
+ const canvas = document.getElementById("fairMapCanvas");
+    if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
 
-    // Definindo tamanho ideal (ajuste conforme sua imagem)
-    canvas.width = 1200;
-    canvas.height = 750;
+    // Definindo tamanho ideal (ajuste conforme sua imagem)
+    canvas.width = 1200;
+    canvas.height = 750;
 
-    const mapImage = new Image();
-    mapImage.src = "09f05500-ff63-4a32-8160-261b02f8c022.png"; // Caminho direto da imagem no projeto
-    mapImage.onload = () => {
-        drawMap();
-    };
+    const mapImage = new Image();
+    mapImage.src = "09f05500-ff63-4a32-8160-261b02f8c022.png"; // Caminho direto da imagem no projeto
+    mapImage.onload = () => {
+     drawMap();
+ };
 
-    // Coordenadas ajustadas com base na sua imagem
-    const stands = [
-        { id: "A-01", name: "AgroTech", x: 230, y: 100, width: 160, height: 45 },
-        { id: "B-02", name: "Fazenda Modelo", x: 430, y: 100, width: 160, height: 45 },
-        { id: "C-03", name: "InovaAgro", x: 820, y: 260, width: 160, height: 45 }
-    ];
+ // Coordenadas ajustadas com base na sua imagem
+ const stands = [
+ { id: "A-01", name: "AgroTech", x: 230, y: 100, width: 160, height: 45 },
+     { id: "B-02", name: "Fazenda Modelo", x: 430, y: 100, width: 160, height: 45 },
+     { id: "C-03", name: "InovaAgro", x: 820, y: 260, width: 160, height: 45 }
+ ];
 
     function drawMap() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1574,6 +1543,39 @@ document.addEventListener("DOMContentLoaded", function () {
 loadMapBackground();
 
 });
+
+function initMap(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    // Força altura padrão se o layout ainda estiver carregando
+    const rect = canvas.getBoundingClientRect();
+    const cssWidth = rect.width || 800;
+    const cssHeight = rect.height || 400;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    if (canvasId === 'fairMapCanvas') {
+        fairMapCanvas = canvas;
+        fairMapCtx = ctx;
+    } else if (canvasId === 'adminMapCanvas') {
+        adminMapCanvas = canvas;
+        adminMapCtx = ctx;
+    }
+
+    drawMap(canvasId, ctx, cssWidth, cssHeight);
+
+    // Redesenhar ao redimensionar janela
+    window.addEventListener("resize", () => {
+        initMap(canvasId); // reinicializa com novos tamanhos
+    });
+}
+
 
     </script>
 
