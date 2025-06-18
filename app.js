@@ -1099,7 +1099,7 @@ if (applyEventFiltersButton) {
 }
 
 let carouselIndex = 0;
-  const totalSlides = 3; // atualize se mudar o número de imagens
+  const totalSlides = 12; // atualize se mudar o número de imagens
 
   function moveCarousel(direction) {
     carouselIndex = (carouselIndex + direction + totalSlides) % totalSlides;
