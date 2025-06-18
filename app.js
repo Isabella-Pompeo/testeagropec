@@ -1097,3 +1097,14 @@ if (applyEventFiltersButton) {
         updateAgendaChart(filteredEvents);
     });
 }
+
+let carouselIndex = 0;
+  const totalSlides = 3; // atualize se mudar o número de imagens
+
+  function moveCarousel(direction) {
+    carouselIndex = (carouselIndex + direction + totalSlides) % totalSlides;
+    document.getElementById("carousel-images").style.transform = `translateX(-${carouselIndex * 100}%)`;
+  }
+
+  // rotação automática
+  setInterval(() => moveCarousel(1), 5000);
